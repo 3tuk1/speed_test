@@ -5,10 +5,16 @@ import os
 import datetime
 import csv
 
+times = 0
+test_count = 0
 def check_and_install_packages():
     try:
         import speedtest
+        print("speedtest import")
         import ping3
+        print("ping3 import")
+        import schedule
+        print("schedule import")
     except ImportError:
         print("ライブラリをインストールします...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "speedtest-cli", "ping3"])
@@ -49,7 +55,7 @@ def create_directory():
             counter += 1
 
         with open(file_path, 'w', newline='', encoding="utf-8") as file:
-            fileheader = ["download_speed", "upload_speed", "PING", "JITTER"]
+            fileheader = ["download_speed", "upload_speed", "PING", "JITTER","CONECT_SERVER","TIME"]
             writer = csv.DictWriter(file, fieldnames=fileheader)
             writer.writeheader()
 
@@ -62,6 +68,10 @@ def create_directory():
 
 def test_speed(st, file_abs, best_address):
     from ping3 import ping
+    import schedule
+
+    global test_count
+    test_count += 1
 
     download_speed = st.download() / 1_000_000  # Mbpsに変換
     upload_speed = st.upload() / 1_000_000  # Mbpsに変換
@@ -76,21 +86,45 @@ def test_speed(st, file_abs, best_address):
     average_ping = sum(ping_values) / len(ping_values) if ping_values else 0
     jitter = calculate_jitter(ping_values)
 
+    
     with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        speedtest_result_data = [download_speed, upload_speed, average_ping, jitter]
-        writer.writerow(speedtest_result_data)
-    print("測定結果がCSVに保存されました。")
+        writer.writerow([download_speed, upload_speed, average_ping, jitter,best_address,datetime.datetime.now()])
+    
+
 
 
 def main():
     print("インターネット回線速度を計測します。\n")
     try:
+        import schedule
         import speedtest
+        global times
+
         st = speedtest.Speedtest()
         best_address = best_server_select(st)
         file_abspath = create_directory()
+        while True:
+            print("1 ~ 60間の整数にしてください")
+            interval = int(input('計測時間の間隔を入力してください(分) : '))
+            if (interval >= 1)&(interval <= 60) :
+                break
+        while True:
+            print("1 ~ 60間の整数にしてください")
+            times = int(input('計測回数を入力してください : '))
+            if (times >= 1)&(times <= 60) :
+                break
+            print("もう一度入力して")
+
         test_speed(st, file_abspath, best_address)
+        schedule.every(interval).minutes.do(lambda: test_speed(st, file_abspath, best_address))
+
+        while True:
+            schedule.run_pending()
+            if test_count >= times:
+                print("終了")
+                break
+            time.sleep(60)
     except Exception as e:
         print(f"エラーが発生しました: {e}")
 
