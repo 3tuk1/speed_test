@@ -1,23 +1,15 @@
-import subprocess
-import sys
+
 import time
 import os
 import datetime
 import csv
-
+import schedule
+import speedtest
+from ping3 import ping
+import schedule
+import csv_to_graph as ctg
 times = 0
 test_count = 0
-def check_and_install_packages():
-    try:
-        import speedtest
-        print("speedtest import")
-        import ping3
-        print("ping3 import")
-        import schedule
-        print("schedule import")
-    except ImportError:
-        print("ライブラリをインストールします...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "speedtest-cli", "ping3"])
 
 
 def calculate_jitter(ping_list):
@@ -67,8 +59,7 @@ def create_directory():
 
 
 def test_speed(st, file_abs, best_address):
-    from ping3 import ping
-    import schedule
+    
 
     global test_count
     test_count += 1
@@ -97,8 +88,7 @@ def test_speed(st, file_abs, best_address):
 def main():
     print("インターネット回線速度を計測します。\n")
     try:
-        import schedule
-        import speedtest
+        
         global times
 
         st = speedtest.Speedtest()
@@ -122,6 +112,7 @@ def main():
         while True:
             schedule.run_pending()
             if test_count >= times:
+                ctg.create_directory_and_generate_pdf(file_abspath)
                 print("終了")
                 break
             time.sleep(60)
@@ -130,5 +121,4 @@ def main():
 
 
 if __name__ == "__main__":
-    check_and_install_packages()
     main()
