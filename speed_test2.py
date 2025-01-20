@@ -94,7 +94,6 @@ def main():
         st = speedtest.Speedtest()
         best_address = best_server_select(st)
         file_abspath = create_directory()
-        print(file_abspath)
         while True:
             print("1 ~ 60間の整数にしてください")
             interval = int(input('計測時間の間隔を入力してください(分) : '))
