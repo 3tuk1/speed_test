@@ -94,6 +94,7 @@ def main():
         st = speedtest.Speedtest()
         best_address = best_server_select(st)
         file_abspath = create_directory()
+        print(file_abspath)
         while True:
             print("1 ~ 60間の整数にしてください")
             interval = int(input('計測時間の間隔を入力してください(分) : '))
@@ -112,7 +113,7 @@ def main():
         while True:
             schedule.run_pending()
             if test_count >= times:
-                ctg.create_directory_and_generate_pdf(file_abspath)
+                ctg.generate_graphs_from_csv(file_abspath)
                 print("終了")
                 break
             time.sleep(60)

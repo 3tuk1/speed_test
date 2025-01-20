@@ -1,2 +1,5 @@
 speed_test.py
 result_csv/*
+result_pdf/*
+__pycache__/csv_to_graph.cpython-312.pyc
+__pycache__/csv_to_graph.cpython-312.pyc

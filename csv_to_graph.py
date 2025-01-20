@@ -4,7 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-def create_directory_and_generate_pdf(csv_file):
+pdf_path = ""
+def create_directory_and_generate_pdf():
+    global pdf_path
     # 日付を取得
     today = datetime.date.today()
     
@@ -26,12 +28,14 @@ def create_directory_and_generate_pdf(csv_file):
         pdf_path = os.path.join(directory, new_pdf_name)
         counter += 1
     
-    return pdf_path
 
 def generate_graphs_from_csv(csv_path):
-    pdf_path=create_directory_and_generate_pdf()
+    # PDFファイルのパスを取得
+    create_directory_and_generate_pdf()
+    
+    
     # CSVファイルを読み込む
-    df = pd.read_csv(csv_file)
+    df = pd.read_csv(csv_path)
 
     # PDF出力用のPDFファイルオブジェクトを作成
     with PdfPages(pdf_path) as pdf:
@@ -83,5 +87,5 @@ def generate_graphs_from_csv(csv_path):
         pdf.savefig()
         plt.close()
 
-# 使用例:
-# create_directory_and_generate_pdf('your_file.csv')
+# testよう
+
