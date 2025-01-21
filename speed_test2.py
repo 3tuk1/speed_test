@@ -1,7 +1,7 @@
 
 import time
 import os
-import datetime
+from datetime import datetime
 import csv
 import schedule
 import speedtest
@@ -31,7 +31,7 @@ def best_server_select(st):
 
 def create_directory():
     directory = "result_csv"
-    base_name = datetime.date.today()
+    base_name = datetime.now().strftime("%Y-%m-%d")
     ext = ".csv"
     try:
         if not os.path.exists(directory):
@@ -80,7 +80,7 @@ def test_speed(st, file_abs, best_address):
     
     with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerow([download_speed, upload_speed, average_ping, jitter,best_address,datetime.datetime.now()])
+        writer.writerow([download_speed, upload_speed, average_ping, jitter,best_address,datetime.now().strftime("%H:%M")])
     
 
 
@@ -91,9 +91,6 @@ def main():
         
         global times
 
-        st = speedtest.Speedtest()
-        best_address = best_server_select(st)
-        file_abspath = create_directory()
         while True:
             print("1 ~ 60間の整数にしてください")
             interval = int(input('計測時間の間隔を入力してください(分) : '))
@@ -105,6 +102,10 @@ def main():
             if (times >= 1)&(times <= 60) :
                 break
             print("もう一度入力して")
+        st = speedtest.Speedtest()
+        best_address = best_server_select(st)
+        file_abspath = create_directory()
+        
 
         test_speed(st, file_abspath, best_address)
         schedule.every(interval).minutes.do(lambda: test_speed(st, file_abspath, best_address))
