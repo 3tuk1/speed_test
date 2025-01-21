@@ -1,4 +1,3 @@
-
 import time
 import os
 from datetime import datetime
@@ -6,11 +5,13 @@ import csv
 import schedule
 import speedtest
 from ping3 import ping
-import schedule
 import csv_to_graph as ctg
+
 times = 0
 test_count = 0
 
+# 最初に選択したサーバー情報を保存する変数
+selected_server = None
 
 def calculate_jitter(ping_list):
     """PingのリストからJitterを計算"""
@@ -18,15 +19,6 @@ def calculate_jitter(ping_list):
         return 0.0
     differences = [abs(ping_list[i] - ping_list[i - 1]) for i in range(1, len(ping_list))]
     return sum(differences) / len(differences)
-
-
-def best_server_select(st):
-    print("サーバーリストを取得中...")
-    st.get_servers()
-    best_server = st.get_best_server()
-    best_address = best_server.get("host", "").split(":")[0]
-    print(f"最適なサーバー: {best_server['host']} ({best_server['country']})")
-    return best_address
 
 
 def create_directory():
@@ -47,7 +39,7 @@ def create_directory():
             counter += 1
 
         with open(file_path, 'w', newline='', encoding="utf-8") as file:
-            fileheader = ["download_speed", "upload_speed", "PING", "JITTER","CONECT_SERVER","TIME"]
+            fileheader = ["download_speed", "upload_speed", "PING", "JITTER", "CONECT_SERVER", "TIME"]
             writer = csv.DictWriter(file, fieldnames=fileheader)
             writer.writeheader()
 
@@ -59,53 +51,68 @@ def create_directory():
 
 
 def test_speed(st, file_abs, best_address):
-    
-
-    global test_count
+    global test_count, selected_server
     test_count += 1
 
-    download_speed = st.download() / 1_000_000  # Mbpsに変換
-    upload_speed = st.upload() / 1_000_000  # Mbpsに変換
+    # サーバー情報がまだ保存されていない場合、最初の1回目の選択を行う
+    if not selected_server:
+        servers = st.get_servers()  # サーバーリストを取得
+        best_server = None
+        for server_list in servers.values():
+            for server in server_list:
+                host = server['host'].split(':')[0]
+                #print(f"サーバーID: {server['id']}, ホスト: {host}, 国: {server['country']}")
+                if host == best_address:
+                    best_server = server
+                    selected_server = best_server  # サーバーを保存
+                    break
+            if best_server:
+                break
 
-    ping_values = []
-    for _ in range(5):
-        result = ping(best_address, timeout=1)
-        if result is not None:
-            ping_values.append(result * 1000)  # 秒からミリ秒に変換
-        time.sleep(1)
+    if selected_server:
+        # 手動で選んだサーバーを選択
+        st.get_best_server([selected_server])  # get_best_serverを使ってサーバーを選択
 
-    average_ping = sum(ping_values) / len(ping_values) if ping_values else 0
-    jitter = calculate_jitter(ping_values)
+        # ダウンロードとアップロードのテスト
+        download_speed = st.download() / 1_000_000  # Mbps
+        upload_speed = st.upload() / 1_000_000  # Mbps
 
-    
-    with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerow([download_speed, upload_speed, average_ping, jitter,best_address,datetime.now().strftime("%H:%M")])
-    
+        ping_values = []
+        for _ in range(5):
+            result = ping(best_address, timeout=1)
+            if result is not None:
+                ping_values.append(result * 1000)  # ミリ秒
+            time.sleep(1)
 
+        average_ping = sum(ping_values) / len(ping_values) if ping_values else 0
+        jitter = calculate_jitter(ping_values)
+
+        with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow([download_speed, upload_speed, average_ping, jitter, best_address, datetime.now().strftime("%H:%M")])
+    else:
+        print(f"指定されたサーバー {best_address} が見つかりませんでした。")
 
 
 def main():
-    print("インターネット回線速度を計測します。\n")
+    #print("インターネット回線速度を計測します。\n")
     try:
-        
         global times
 
         while True:
             print("1 ~ 60間の整数にしてください")
             interval = int(input('計測時間の間隔を入力してください(分) : '))
-            if (interval >= 1)&(interval <= 60) :
+            if (interval >= 1) & (interval <= 60):
                 break
         while True:
             print("1 ~ 60間の整数にしてください")
             times = int(input('計測回数を入力してください : '))
-            if (times >= 1)&(times <= 60) :
+            if (times >= 1) & (times <= 60):
                 break
             print("もう一度入力して")
         st = speedtest.Speedtest()
-        best_address = best_server_select(st)
+        best_address = "speed.udx.icscoe.jp"  # サーバー指定
         file_abspath = create_directory()
-        
 
         test_speed(st, file_abspath, best_address)
         schedule.every(interval).minutes.do(lambda: test_speed(st, file_abspath, best_address))
