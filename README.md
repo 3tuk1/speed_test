@@ -43,7 +43,7 @@
 - `speedtest-cli`
 - `ping3`
 - `schedule`
-- `csv_to_graph`（グラフを生成する場合）
+- `csv_to_graph`
 
 依存関係が不足している場合、以下のコマンドでインストールできます：
 
