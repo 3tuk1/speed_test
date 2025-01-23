@@ -8,7 +8,7 @@ def check_and_install_packages():
     if os.path.exists(requirements_file):
         try:
             print("必要なライブラリをインストールしています...")
-            # エンコーディングを指定して requirements.txt を読み込む
+            # requirements.txt を読み込んでライブラリのインストールを行う
             with open(requirements_file, "r", encoding="utf-8") as file:
                 requirements = file.read().splitlines()
             subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])

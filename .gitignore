@@ -1,4 +1,3 @@
-speed_test.py
 result_csv/*
 result_pdf/*
 __pycache__/csv_to_graph.cpython-312.pyc
@@ -7,9 +6,7 @@ speed_test2.log
 run_sript.py
 run_sript.spec
 dist/run_sript.exe
-build/run_sript/*
-dist/result_pdf/*
-dist/result_csv/*
-build/setup/*
+build/*
 setup.spec
-dist/setup.exe
+dist/*
+*.log
