@@ -3,8 +3,13 @@ import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import logging
+
+# matplotlibのログを警告以上に設定
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 pdf_path = ""
+
 def create_directory_and_generate_pdf():
     global pdf_path
     # 日付を取得
@@ -27,15 +32,29 @@ def create_directory_and_generate_pdf():
         new_pdf_name = f"{today}_{counter}.pdf"
         pdf_path = os.path.join(directory, new_pdf_name)
         counter += 1
-    
+
 
 def generate_graphs_from_csv(csv_path):
     # PDFファイルのパスを取得
     create_directory_and_generate_pdf()
-    
-    
+
+    # CSVファイルを確認
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"指定されたCSVファイルが見つかりません: {csv_path}")
+
     # CSVファイルを読み込む
     df = pd.read_csv(csv_path)
+
+    # データが空の場合のチェック
+    if df.empty:
+        raise ValueError(f"指定されたCSVファイルにはデータがありません: {csv_path}")
+
+    # TIMEカラムをdatetime型に変換（例: 時間データがある場合）
+    if 'TIME' in df.columns:
+        try:
+            df['TIME'] = pd.to_datetime(df['TIME'], format='%H:%M', errors='coerce')
+        except Exception as e:
+            raise ValueError(f"TIMEカラムの形式が正しくありません: {e}")
 
     # PDF出力用のPDFファイルオブジェクトを作成
     with PdfPages(pdf_path) as pdf:
@@ -45,7 +64,6 @@ def generate_graphs_from_csv(csv_path):
         plt.xlabel('Time')
         plt.ylabel('Download Speed (Mbps)')
         plt.title('Download Speed over Time')
-        #plt.xticks(rotation=45)
         plt.tight_layout()
         plt.legend()
         pdf.savefig()
@@ -57,7 +75,6 @@ def generate_graphs_from_csv(csv_path):
         plt.xlabel('Time')
         plt.ylabel('Upload Speed (Mbps)')
         plt.title('Upload Speed over Time')
-        #plt.xticks(rotation=45)
         plt.tight_layout()
         plt.legend()
         pdf.savefig()
@@ -69,7 +86,6 @@ def generate_graphs_from_csv(csv_path):
         plt.xlabel('Time')
         plt.ylabel('Ping (ms)')
         plt.title('Ping over Time')
-        #plt.xticks(rotation=45)
         plt.tight_layout()
         plt.legend()
         pdf.savefig()
@@ -81,11 +97,9 @@ def generate_graphs_from_csv(csv_path):
         plt.xlabel('Time')
         plt.ylabel('Jitter (ms)')
         plt.title('Jitter over Time')
-        #plt.xticks(rotation=45)
         plt.tight_layout()
         plt.legend()
         pdf.savefig()
         plt.close()
 
-# testよう
-
+    print(f"グラフが作成され、PDFに保存されました: {pdf_path}")

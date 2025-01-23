@@ -19,12 +19,11 @@ error_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 error_handler.setFormatter(error_formatter)
 logger.addHandler(error_handler)
 
-times = 0
 test_count = 0
-exclude_addresses = ["speedtest.softether.co.jp"]  # ここにつくばとかの除外したいサーバーのアドレスを入れる
+selected_server = None
 
 # 最初に選択したサーバー情報を保存する変数
-selected_server = None
+
 
 def calculate_jitter(ping_list):
     """PingのリストからJitterを計算"""
@@ -61,26 +60,13 @@ def create_directory():
         logger.error(f"エラーが発生しました: {e}")
         raise Exception("ディレクトリ作成に失敗しました")
 
-def test_speed(st, file_abs):
-    global test_count, selected_server
+def test_speed(st, file_abs, selecte_server):
+    
+    global test_count,selected_server
     test_count += 1
 
     if not selected_server:
-        logger.info("サーバーのリスト取得中")
-        servers = st.get_servers()
-        if not servers:
-            logger.error("サーバーリストを取得できませんでした")
-            raise Exception("サーバーリストの取得に失敗しました")
-
-        selected_servers = [
-            server for server_list in servers.values() for server in server_list
-            if server['host'].split(':')[0] not in exclude_addresses
-        ]
-        if not selected_servers:
-            logger.error("有効なサーバーが見つかりませんでした")
-            raise Exception("有効なサーバーが見つかりません")
-
-        selected_server = st.get_best_server(selected_servers)
+      selected_server = st.get_best_server(selecte_server)
 
     if selected_server:
         logger.info("ダウンロード速度計測中")
@@ -98,7 +84,7 @@ def test_speed(st, file_abs):
         logger.info("PING計測中")
         ping_values = []
         for _ in range(5):
-            result = ping(selected_server["host"], timeout=1)
+            result = ping(selected_server["host"].split(':')[0], timeout=1)
             if result is not None:
                 ping_values.append(result * 1000)
             time.sleep(1)
@@ -112,33 +98,20 @@ def test_speed(st, file_abs):
 
         with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow([download_speed, upload_speed, average_ping, jitter, selected_server["host"], datetime.now().strftime("%H:%M")])
+            writer.writerow([download_speed, upload_speed, average_ping, jitter, selected_server["host"].split(':')[0], datetime.now().strftime("%H:%M")])
         logger.info(f"{test_count}回目の計測が終了しました")
     else:
         logger.warning("サーバーが見つかりませんでした。")
         raise Exception("サーバーが見つかりませんでした")
 
-def main():
-    global times
+def speedtest_main(times,interval,select_server):
 
-    while True:
-        logger.info("1 ~ 60間の整数にしてください")
-        interval = int(input('計測時間の間隔を入力してください(分) : '))
-        if 1 <= interval <= 60:
-            break
-
-    while True:
-        logger.info("1 ~ 60間の整数にしてください")
-        times = int(input('計測回数を入力してください : '))
-        if 1 <= times <= 60:
-            break
-        logger.info("もう一度入力して")
-
+    
     st = speedtest.Speedtest()
     file_abspath = create_directory()
 
-    test_speed(st, file_abspath)
-    schedule.every(interval).minutes.do(lambda: test_speed(st, file_abspath))
+    test_speed(st, file_abspath,select_server)
+    schedule.every(interval).minutes.do(lambda: test_speed(st, file_abspath,select_server))
 
     try:
         while test_count < times:
@@ -148,6 +121,3 @@ def main():
         logger.info("終了")
     except Exception as e:
         logger.error(f"エラーが発生しました: {e}")
-
-if __name__ == "__main__":
-    main()
