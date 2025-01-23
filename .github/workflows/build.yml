@@ -38,11 +38,12 @@ jobs:
 
       - name: List dist directory (debugging)
         run: |
-          if ($env:RUNNER_OS -eq "Windows") {
+          # For Windows
+          if [ "${{ runner.os }}" == "Windows" ]; then
             dir dist
-          } else {
+          else
             ls -al dist
-          }
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
