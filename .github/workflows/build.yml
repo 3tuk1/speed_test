@@ -34,7 +34,7 @@ jobs:
         run: |
           pyinstaller --onefile popup.py
         env:
-          # Linuxではビルド時に必要となるLC_ALL環境変数を設定
+          # Linuxではビルド時に必要となるLC_ALL環境変数を設定a
           LC_ALL: C.UTF-8
 
       - name: Upload artifact
