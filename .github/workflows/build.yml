@@ -34,20 +34,13 @@ jobs:
         run: |
           pyinstaller --onefile popup.py
         env:
-          LC_ALL: C.UTF-8  # Linux用のロケール設定
-
-      - name: List dist directory (debugging)
-        run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            dir dist
-          else
-            ls -al dist
-          fi
+          # Linuxではビルド時に必要となるLC_ALL環境変数を設定a
+          LC_ALL: C.UTF-8
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: speed_test_executable-${{ matrix.os }}
           path: |
-            dist/popup.exe
-            dist/popup
+            dist/speed_test.exe
+            dist/speed_test
