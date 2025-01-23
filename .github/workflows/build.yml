@@ -36,3 +36,9 @@ jobs:
       run: |
         dir dist
       if: runner.os == 'Windows'
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: SPEEDTEST-${{ matrix.os }}
+        path: dist/SPEEDTEST*
