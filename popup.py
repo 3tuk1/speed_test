@@ -4,9 +4,9 @@ import speedtest
 import logging
 from ping3 import ping  # ping3をインポート
 import speed_test
-import subprocess  # subprocessをインポート
 
-exclude_addresses = ["speedtest.softether.co.jp"]  # 除外するサーバーのアドレスを指定
+exclude_addresses = ["speedtest.softether.co.jp","jp-nperf.verizon.net"]  # 除外するサーバーのアドレスを指定
+Start = False
 
 # ログ設定
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -18,6 +18,7 @@ error_handler.setLevel(logging.ERROR)
 error_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 error_handler.setFormatter(error_formatter)
 logger.addHandler(error_handler)
+
 
 def create_popup():
     # ポップアップウィンドウの作成
@@ -109,43 +110,46 @@ def create_popup():
 
     # PINGを1秒ごとに更新する関数
     def update_ping():
-        for i, server in enumerate(selected_servers):
-            host = server["host"]
-            latency = ping(host, timeout=1)  # ping3でPING値を計測
-            if latency:
-                latency_ms = round(latency * 1000, 2)
-                server["ping_count"] += 1  # 計測回数を増加
+        global Start
+        if not Start :
+            for i, server in enumerate(selected_servers):
+                host = server["host"]
+                latency = ping(host, timeout=1)  # ping3でPING値を計測
+                if latency:
+                    latency_ms = round(latency * 1000, 2)
+                    server["ping_count"] += 1  # 計測回数を増加
 
-                # 平均PING値を計算
-                if server["ping_count"] == 1:
-                    server["average_latency"] = latency_ms
+                    # 平均PING値を計算
+                    if server["ping_count"] == 1:
+                        server["average_latency"] = latency_ms
+                    else:
+                        server["average_latency"] = round(
+                            (server["average_latency"] * (server["ping_count"] - 1) + latency_ms) / server["ping_count"], 2
+                        )
+
+                    server["latency"] = latency_ms
                 else:
-                    server["average_latency"] = round(
-                        (server["average_latency"] * (server["ping_count"] - 1) + latency_ms) / server["ping_count"], 2
-                    )
+                    server["latency"] = "接続不可"
 
-                server["latency"] = latency_ms
-            else:
-                server["latency"] = "接続不可"
+            # Treeviewの内容を更新
+            for item, server in zip(tree.get_children(), selected_servers):
+                tree.item(item, values=(server["host"], server["latency"], server["average_latency"], server["distance"]))
 
-        # Treeviewの内容を更新
-        for item, server in zip(tree.get_children(), selected_servers):
-            tree.item(item, values=(server["host"], server["latency"], server["average_latency"], server["distance"]))
-
-        # 1秒後に再度実行
-        popup.after(1000, update_ping)
+            # 1秒後に再度実行
+            popup.after(1000, update_ping)
 
     # 開始ボタンを追加
     def start_measurement():
+        global Start
         selected_server = [
             server for server_list in servers.values() for server in server_list
             if server['host'].split(':')[0] in select_server.get()
         ]
         inv = int(interval.get())
         sli = int(slider.get())
+        Start = True
         popup.destroy()
-        # subprocessでCMDを表示してspeed_test.speedtest_mainを実行
-        subprocess.Popen(["python", "-c", f"import speed_test; speed_test.speedtest_main({sli}, {inv}, {selected_server})"])
+        speed_test.speedtest_main(sli, inv, selected_server)
 
     start_button = ttk.Button(main_tab, text="開始", command=start_measurement)
     start_button.pack(pady=20)
@@ -155,6 +159,7 @@ def create_popup():
 
     # ウィンドウのループ
     popup.mainloop()
+
 
 if __name__ == "__main__":
     create_popup()
