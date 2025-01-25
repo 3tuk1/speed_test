@@ -6,7 +6,7 @@ from ping3 import ping  # ping3をインポート
 import speed_test
 
 exclude_addresses = ["speedtest.softether.co.jp","jp-nperf.verizon.net"]  # 除外するサーバーのアドレスを指定
-Start = False
+shcedule_id = None
 
 # ログ設定
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -64,7 +64,7 @@ def create_popup():
     interval.pack(pady=5)
 
     # サーバーリストを取得
-    st = speedtest.Speedtest()
+    st = speedtest.Speedtest(secure=True)
     servers = st.get_servers()
     if not servers:
         logger.error("サーバーリストを取得できませんでした")
@@ -110,8 +110,6 @@ def create_popup():
 
     # PINGを1秒ごとに更新する関数
     def update_ping():
-        global Start
-        if not Start :
             for i, server in enumerate(selected_servers):
                 host = server["host"]
                 latency = ping(host, timeout=1)  # ping3でPING値を計測
@@ -136,18 +134,19 @@ def create_popup():
                 tree.item(item, values=(server["host"], server["latency"], server["average_latency"], server["distance"]))
 
             # 1秒後に再度実行
-            popup.after(1000, update_ping)
+            global shcedule_id
+            shcedule_id = popup.after(1000, update_ping)
 
     # 開始ボタンを追加
     def start_measurement():
-        global Start
+        global shcedule_id
         selected_server = [
             server for server_list in servers.values() for server in server_list
             if server['host'].split(':')[0] in select_server.get()
         ]
         inv = int(interval.get())
         sli = int(slider.get())
-        Start = True
+        popup.after_cancel(shcedule_id)
         popup.destroy()
         speed_test.speedtest_main(sli, inv, selected_server)
 

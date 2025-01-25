@@ -98,7 +98,7 @@ def test_speed(st, file_abs, selecte_server):
 
         with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow([download_speed, upload_speed, average_ping, jitter, selected_server["host"].split(':')[0], datetime.now().strftime("%H:%M")])
+            writer.writerow([f"{download_speed:.1f}", f"{upload_speed:.1f}", f"{average_ping:.1f}", f"{jitter:.1f}", selected_server["host"].split(':')[0], datetime.now().strftime("%H:%M")])
         logger.info(f"{test_count}回目の計測が終了しました")
     else:
         logger.warning("サーバーが見つかりませんでした。")
@@ -107,7 +107,7 @@ def test_speed(st, file_abs, selecte_server):
 def speedtest_main(times,interval,select_server):
 
     
-    st = speedtest.Speedtest()
+    st = speedtest.Speedtest(secure=True)
     file_abspath = create_directory()
 
     test_speed(st, file_abspath,select_server)
