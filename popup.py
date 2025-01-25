@@ -161,4 +161,8 @@ def create_popup():
 
 
 if __name__ == "__main__":
-    create_popup()
+    try:
+        create_popup()
+    except Exception as e:
+        logger.exception("An error has occurred.")
+        raise
