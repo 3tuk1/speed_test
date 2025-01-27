@@ -25,7 +25,7 @@ jobs:
 
     - name: Build executable with PyInstaller
       run: |
-        pyinstaller --onefile --name SPEEDTEST popup.py
+        pyinstaller --onefile --name SPEEDTEST main.py
 
     - name: List dist directory (debugging)
       run: |

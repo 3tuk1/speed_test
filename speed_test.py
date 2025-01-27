@@ -1,5 +1,4 @@
 import time
-import os
 from datetime import datetime
 import csv
 import schedule
@@ -7,10 +6,11 @@ import speedtest
 from ping3 import ping
 import csv_to_graph as ctg
 import logging
+from utils import get_fqdn, gen_filename
+from pathlib import Path
 
 # ログ設定
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("__main__").getChild(__name__)
 
 # エラーログ用のファイルハンドラーを追加
 error_handler = logging.FileHandler("error.log")
@@ -23,8 +23,6 @@ test_count = 0
 selected_server = None
 
 # 最初に選択したサーバー情報を保存する変数
-
-
 def calculate_jitter(ping_list):
     """PingのリストからJitterを計算"""
     if len(ping_list) < 2:
@@ -32,41 +30,20 @@ def calculate_jitter(ping_list):
     differences = [abs(ping_list[i] - ping_list[i - 1]) for i in range(1, len(ping_list))]
     return sum(differences) / len(differences)
 
-def create_directory():
-    directory = "result_csv"
-    base_name = datetime.now().strftime("%Y-%m-%d")
-    ext = ".csv"
-    try:
-        if not os.path.exists(directory):
-            logger.info("フォルダの作成")
-            os.makedirs(directory)
-
-        file_name = f"{base_name}{ext}"
-        file_path = os.path.join(directory, file_name)
-        counter = 1
-
-        while os.path.exists(file_path):
-            file_path = os.path.join(directory, f"{base_name}_{counter}{ext}")
-            counter += 1
-
-        with open(file_path, 'w', newline='', encoding="utf-8") as file:
-            fileheader = ["download_speed", "upload_speed", "PING", "JITTER", "CONECT_SERVER", "TIME"]
-            writer = csv.DictWriter(file, fieldnames=fileheader)
-            writer.writeheader()
-
-        logger.info(f"空のファイル '{file_path}' が作成されました。")
-        return os.path.abspath(file_path)
-    except Exception as e:
-        logger.error(f"エラーが発生しました: {e}")
-        raise Exception("ディレクトリ作成に失敗しました")
+def create_csv(file_path:Path):
+    with open(file_path, 'w', newline='', encoding="utf-8") as file:
+        fileheader = ["download_speed", "upload_speed", "PING", "JITTER", "CONECT_SERVER", "TIME"]
+        writer = csv.DictWriter(file, fieldnames=fileheader)
+        writer.writeheader()
+    logger.info(f"空のファイル '{str(file_path)}' が作成されました。")
 
 def test_speed(st, file_abs, selecte_server):
-    
     global test_count,selected_server
     test_count += 1
 
     if not selected_server:
       selected_server = st.get_best_server(selecte_server)
+      logger.info(f"選択されたサーバは{get_fqdn(selected_server)}です。")
 
     if selected_server:
         logger.info("ダウンロード速度計測中")
@@ -84,7 +61,7 @@ def test_speed(st, file_abs, selecte_server):
         logger.info("PING計測中")
         ping_values = []
         for _ in range(5):
-            result = ping(selected_server["host"].split(':')[0], timeout=1)
+            result = ping(get_fqdn(selected_server), timeout=1)
             if result is not None:
                 ping_values.append(result * 1000)
             time.sleep(1)
@@ -98,23 +75,23 @@ def test_speed(st, file_abs, selecte_server):
 
         with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow([f"{download_speed:.1f}", f"{upload_speed:.1f}", f"{average_ping:.1f}", f"{jitter:.1f}", selected_server["host"].split(':')[0], datetime.now().strftime("%H:%M")])
+            writer.writerow([f"{download_speed:.1f}", f"{upload_speed:.1f}", f"{average_ping:.1f}", f"{jitter:.1f}", get_fqdn(selected_server), datetime.now().strftime("%H:%M")])
         logger.info(f"{test_count}回目の計測が終了しました")
     else:
         logger.warning("サーバーが見つかりませんでした。")
         raise Exception("サーバーが見つかりませんでした")
 
-def speedtest_main(times,interval,select_server):
-
-    
+def speedtest_main(total_count, interval, select_server):
     st = speedtest.Speedtest(secure=True)
-    file_abspath = create_directory()
+    file_abspath = gen_filename(datetime.now().strftime("%Y-%m-%d"), "csv", "result_csv")
+    create_csv(file_abspath)
 
-    test_speed(st, file_abspath,select_server)
-    schedule.every(interval).minutes.do(lambda: test_speed(st, file_abspath,select_server))
+    logger.info(f"{total_count}回のテストを実行します")
+    test_speed(st, file_abspath, select_server)
+    schedule.every(interval).minutes.do(lambda: test_speed(st, file_abspath, select_server))
 
     try:
-        while test_count < times:
+        while test_count < total_count:
             schedule.run_pending()
             time.sleep(60)
         ctg.generate_graphs_from_csv(file_abspath)

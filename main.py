@@ -3,7 +3,8 @@ from tkinter import ttk
 import speedtest
 import logging
 from ping3 import ping  # ping3をインポート
-import speed_test
+from speed_test import speedtest_main
+from utils import get_fqdn
 
 exclude_addresses = ["speedtest.softether.co.jp","jp-nperf.verizon.net"]  # 除外するサーバーのアドレスを指定
 shcedule_id = None
@@ -18,7 +19,6 @@ error_handler.setLevel(logging.ERROR)
 error_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 error_handler.setFormatter(error_formatter)
 logger.addHandler(error_handler)
-
 
 def create_popup():
     # ポップアップウィンドウの作成
@@ -52,15 +52,16 @@ def create_popup():
         slider_value_label.config(text=f"スライダーの値: {int(slider.get())}")
 
     slider = ttk.Scale(main_tab, from_=1, to=100, orient="horizontal", command=update_slider_value)
+    slider.set(1)
     slider.pack(pady=5)
 
     # 計測間隔設定
     interval_label = ttk.Label(main_tab, text="計測間隔")
     interval_label.pack(pady=10)
 
-    options1 = ["5", "10", "15", "30", "45", "60"]
+    options1 = [1, 5, 10, 15, 30, 45, 60]
     interval = ttk.Combobox(main_tab, values=options1)
-    interval.set("1")
+    interval.set(1)
     interval.pack(pady=5)
 
     # サーバーリストを取得
@@ -73,7 +74,7 @@ def create_popup():
     selected_servers = []
     for server_list in servers.values():
         for server in server_list:
-            host = server['host'].split(':')[0]
+            host = get_fqdn(server)
             if host not in exclude_addresses and server['cc'] == "JP":
                 selected_servers.append({
                     "host": host,
@@ -89,6 +90,7 @@ def create_popup():
 
     # サーバー選択用のコンボボックス
     options2 = [server['host'] for server in selected_servers]
+    options2.insert(0, "選択無し")
     select_server_label = ttk.Label(main_tab, text="選択サーバー")
     select_server_label.pack(pady=10)
 
@@ -135,20 +137,20 @@ def create_popup():
 
             # 1秒後に再度実行
             global shcedule_id
-            shcedule_id = popup.after(1000, update_ping)
+            shcedule_id = popup.after(5000, update_ping)
 
     # 開始ボタンを追加
     def start_measurement():
         global shcedule_id
         selected_server = [
             server for server_list in servers.values() for server in server_list
-            if server['host'].split(':')[0] in select_server.get()
+            if get_fqdn(server) in select_server.get()
         ]
         inv = int(interval.get())
         sli = int(slider.get())
         popup.after_cancel(shcedule_id)
         popup.destroy()
-        speed_test.speedtest_main(sli, inv, selected_server)
+        speedtest_main(sli, inv, selected_server)
 
     start_button = ttk.Button(main_tab, text="開始", command=start_measurement)
     start_button.pack(pady=20)
