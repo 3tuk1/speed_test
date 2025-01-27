@@ -4,50 +4,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import logging
+from pathlib import Path
+from utils import gen_filename
+CURDIR = Path.cwd()
 
 # matplotlibのログを警告以上に設定
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logger = logging.getLogger("__main__").getChild(__name__)
 
-pdf_path = ""
-
-def create_directory_and_generate_pdf():
-    global pdf_path
-    # 日付を取得
-    today = datetime.date.today()
-    
-    # 保存先ディレクトリを指定
-    directory = 'result_pdf'
-    
-    # ディレクトリが存在しない場合に作成
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    
-    # PDFファイル名の作成
-    base_pdf_name = f"{today}.pdf"
-    pdf_path = os.path.join(directory, base_pdf_name)
-    
-    # 同名のPDFが存在する場合、数字を追加して新しい名前にする
-    counter = 1
-    while os.path.exists(pdf_path):
-        new_pdf_name = f"{today}_{counter}.pdf"
-        pdf_path = os.path.join(directory, new_pdf_name)
-        counter += 1
-
-
-def generate_graphs_from_csv(csv_path):
+def generate_graphs_from_csv(csv_path: Path):
     # PDFファイルのパスを取得
-    create_directory_and_generate_pdf()
+    pdf_path = gen_filename(datetime.date.today(), "pdf", "result_pdf")
 
     # CSVファイルを確認
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"指定されたCSVファイルが見つかりません: {csv_path}")
+    if not csv_path.exists():
+        raise FileNotFoundError(f"指定されたCSVファイルが見つかりません: {str(csv_path)}")
 
     # CSVファイルを読み込む
     df = pd.read_csv(csv_path)
 
     # データが空の場合のチェック
     if df.empty:
-        raise ValueError(f"指定されたCSVファイルにはデータがありません: {csv_path}")
+        raise ValueError(f"指定されたCSVファイルにはデータがありません: {str(csv_path)}")
 
     # TIMEカラムをdatetime型に変換（例: 時間データがある場合）
     if 'TIME' in df.columns:
@@ -102,4 +80,4 @@ def generate_graphs_from_csv(csv_path):
         pdf.savefig()
         plt.close()
 
-    print(f"グラフが作成され、PDFに保存されました: {pdf_path}")
+    logger.info(f"グラフが作成され、PDFに保存されました: {pdf_path}")

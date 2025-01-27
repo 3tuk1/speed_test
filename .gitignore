@@ -11,3 +11,5 @@ setup.spec
 dist/*
 *.log
 speed_test2.spec
+env/
+*.pyc
