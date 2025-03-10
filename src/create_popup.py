@@ -64,29 +64,89 @@ def create_popup():
     interval.set(1)
     interval.pack(pady=5)
 
-    # サーバーリストを取得
-    st = speedtest.Speedtest(secure=True)
-    servers = st.get_servers()
-    if not servers:
-        logger.error("サーバーリストを取得できませんでした")
-        raise Exception("サーバーリストの取得に失敗しました")
+    try:
+        st = speedtest.Speedtest(secure=True)
 
-    selected_servers = []
-    for server_list in servers.values():
-        for server in server_list:
-            host = get_fqdn(server)
-            if host not in exclude_addresses and server['cc'] == "JP":
+        try:
+            import socket
+            socket.create_connection(("8.8.8.8", 53), timeout=3)
+            logger.info("インターネット接続確認OK")
+        except Exception as e:
+            logger.error(f"ネットワーク接続エラー: {str(e)}")
+            raise Exception("インターネット接続が確認できません")
+
+        logger.info("サーバーリスト取得中...")
+        servers = st.get_servers()
+        logger.info(f"サーバーリスト取得完了: {len(servers)}件")
+
+        # ステップ1: 日本のサーバーを除外リスト適用でフィルタリング
+        filtered_servers = {
+            sid: info for sid, info in servers.items()
+            if info[0].get("host") not in exclude_addresses and info[0].get("cc") == "JP"
+        }
+        logger.info(f"日本のサーバー数（除外リスト適用）: {len(filtered_servers)}")
+
+        selected_servers = []
+        for server_list in filtered_servers.values():
+            for server in server_list:
+                host = get_fqdn(server)
                 selected_servers.append({
                     "host": host,
                     "latency": "未計測",
                     "average_latency": "未計測",
                     "distance": server.get('d', "不明"),
-                    "ping_count": 0  # 計測回数を追跡
+                    "ping_count": 0
                 })
 
+        # ステップ2: 日本のサーバーが見つからない場合は除外リストを無視
+        if not selected_servers:
+            logger.warning("日本のサーバーが見つかりませんでした。除外リストを無視します...")
+            filtered_servers = {
+                sid: info for sid, info in servers.items()
+                if info[0].get("cc") == "JP"  # 除外リストを適用しない
+            }
+            logger.info(f"日本のサーバー数（除外リストなし）: {len(filtered_servers)}")
+
+            for server_list in filtered_servers.values():
+                for server in server_list:
+                    host = get_fqdn(server)
+                    selected_servers.append({
+                        "host": host,
+                        "latency": "未計測",
+                        "average_latency": "未計測",
+                        "distance": server.get('d', "不明"),
+                        "ping_count": 0
+                    })
+
+        # ステップ3: それでもサーバーが見つからない場合は海外も含める
+        if not selected_servers:
+            logger.warning("日本のサーバーが見つかりませんでした。海外のサーバーも含めます...")
+            filtered_servers = {
+                sid: info for sid, info in servers.items()
+                if info[0].get("host") not in exclude_addresses  # 除外リスト適用・国コード無視
+            }
+            logger.info(f"海外含む緩和後のサーバー数: {len(filtered_servers)}")
+
+            for server_list in filtered_servers.values():
+                for server in server_list:
+                    host = get_fqdn(server)
+                    selected_servers.append({
+                        "host": host,
+                        "latency": "未計測",
+                        "average_latency": "未計測",
+                        "distance": server.get('d', "不明"),
+                        "ping_count": 0
+                    })
+
+    except Exception as e:
+        logger.error(f"サーバーリスト取得中にエラー発生: {str(e)}")
+        raise Exception(f"サーバーリスト取得エラー: {str(e)}")
+
+    # 最終確認
     if not selected_servers:
         logger.error("有効なサーバーが見つかりませんでした")
         raise Exception("有効なサーバーが見つかりません")
+
 
     # サーバー選択用のコンボボックス
     options2 = [server['host'] for server in selected_servers]

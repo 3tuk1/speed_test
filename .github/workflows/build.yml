@@ -31,7 +31,7 @@ jobs:
 
     - name: Build executable with PyInstaller
       run: |
-        pyinstaller --onefile --name SPEEDTEST --add-data "src;src" --hidden-import=speedtest src/main.py
+        pyinstaller --onefile --name SPEEDTEST src/main.py
 
     - name: List dist directory (debugging)
       run: |

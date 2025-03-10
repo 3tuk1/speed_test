@@ -7,7 +7,7 @@ from ping3 import ping
 import logging
 from pathlib import Path
 
-from src.csv_to_graph import generate_graphs_from_csv as ctg
+from src.csv_to_graph import generate_graphs_from_csv
 from src.utils import get_fqdn, gen_filename
 
 # ログ設定
@@ -38,13 +38,14 @@ def create_csv(file_path:Path):
         writer.writeheader()
     logger.info(f"空のファイル '{str(file_path)}' が作成されました。")
 
+
 def test_speed(st, file_abs, selecte_server):
-    global test_count,selected_server
+    global test_count, selected_server
     test_count += 1
 
     if not selected_server:
-      selected_server = st.get_best_server(selecte_server)
-      logger.info(f"選択されたサーバは{get_fqdn(selected_server)}です。")
+        selected_server = st.get_best_server(selecte_server)
+        logger.info(f"選択されたサーバは{get_fqdn(selected_server)}です。")
 
     if selected_server:
         logger.info("ダウンロード速度計測中")
@@ -52,19 +53,23 @@ def test_speed(st, file_abs, selecte_server):
         if download_speed <= 0:
             logger.error("ダウンロード速度が0Mbps以下です")
             raise Exception("ダウンロード速度が異常です")
+        logger.info(f"ダウンロード速度: {download_speed:.2f} Mbps")
 
         logger.info("アップロード速度計測中")
         upload_speed = st.upload() / 1_000_000
         if upload_speed <= 0:
             logger.error("アップロード速度が0Mbps以下です")
             raise Exception("アップロード速度が異常です")
+        logger.info(f"アップロード速度: {upload_speed:.2f} Mbps")
 
         logger.info("PING計測中")
         ping_values = []
-        for _ in range(5):
+        for i in range(5):
             result = ping(get_fqdn(selected_server), timeout=1)
             if result is not None:
-                ping_values.append(result * 1000)
+                ping_ms = result * 1000
+                ping_values.append(ping_ms)
+                logger.debug(f"PING測定 {i + 1}/5: {ping_ms:.1f} ms")
             time.sleep(1)
 
         if not ping_values:
@@ -74,9 +79,17 @@ def test_speed(st, file_abs, selecte_server):
         average_ping = sum(ping_values) / len(ping_values) if ping_values else 0
         jitter = calculate_jitter(ping_values)
 
+        logger.info(f"平均PING値: {average_ping:.1f} ms")
+        logger.info(f"Jitter値: {jitter:.1f} ms")
+
         with open(file_abs, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow([f"{download_speed:.1f}", f"{upload_speed:.1f}", f"{average_ping:.1f}", f"{jitter:.1f}", get_fqdn(selected_server), datetime.now().strftime("%H:%M")])
+            writer.writerow([f"{download_speed:.1f}", f"{upload_speed:.1f}", f"{average_ping:.1f}", f"{jitter:.1f}",
+                             get_fqdn(selected_server), datetime.now().strftime("%H:%M")])
+
+        # 総合結果のログ出力
+        logger.info(
+            f"計測結果 #{test_count}: ダウンロード {download_speed:.1f} Mbps, アップロード {upload_speed:.1f} Mbps, PING {average_ping:.1f} ms, Jitter {jitter:.1f} ms")
         logger.info(f"{test_count}回目の計測が終了しました")
     else:
         logger.warning("サーバーが見つかりませんでした。")
@@ -95,7 +108,7 @@ def speedtest_main(total_count, interval, select_server):
         while test_count < total_count:
             schedule.run_pending()
             time.sleep(60)
-        ctg(file_abspath)
+        generate_graphs_from_csv(file_abspath)
         logger.info("終了")
     except Exception as e:
         logger.error(f"エラーが発生しました: {e}")
