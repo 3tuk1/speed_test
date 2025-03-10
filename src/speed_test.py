@@ -4,10 +4,11 @@ import csv
 import schedule
 import speedtest
 from ping3 import ping
-import csv_to_graph as ctg
 import logging
-from utils import get_fqdn, gen_filename
 from pathlib import Path
+
+import csv_to_graph as ctg
+from utils import get_fqdn, gen_filename
 
 # ログ設定
 logger = logging.getLogger("__main__").getChild(__name__)

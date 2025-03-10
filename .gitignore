@@ -1,5 +1,5 @@
-result_csv/*
-result_pdf/*
+src/result_csv/*
+src/result_pdf/*
 __pycache__/csv_to_graph.cpython-312.pyc
 __pycache__/csv_to_graph.cpython-312.pyc
 speed_test2.log
@@ -13,3 +13,4 @@ dist/*
 speed_test2.spec
 env/
 *.pyc
+src/*.log

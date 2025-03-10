@@ -160,11 +160,3 @@ def create_popup():
 
     # ウィンドウのループ
     popup.mainloop()
-
-
-if __name__ == "__main__":
-    try:
-        create_popup()
-    except Exception as e:
-        logger.exception("An error has occurred.")
-        raise
