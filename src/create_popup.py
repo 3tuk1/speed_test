@@ -3,8 +3,8 @@ from tkinter import ttk
 import speedtest
 import logging
 from ping3 import ping  # ping3をインポート
-from .speed_test import speedtest_main
-from .utils import get_fqdn
+from src.speed_test import speedtest_main
+from src.utils import get_fqdn
 
 exclude_addresses = ["speedtest.softether.co.jp","jp-nperf.verizon.net"]  # 除外するサーバーのアドレスを指定
 shcedule_id = None

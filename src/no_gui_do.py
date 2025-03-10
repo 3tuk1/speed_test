@@ -2,7 +2,7 @@ import logging
 
 import speedtest
 
-from .speed_test import  speedtest_main
+from src.speed_test import  speedtest_main
 
 exclude_addresses = ["speedtest.softether.co.jp","jp-nperf.verizon.net"]  # 除外するサーバーのアドレスを指定
 

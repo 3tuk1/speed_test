@@ -7,8 +7,8 @@ from ping3 import ping
 import logging
 from pathlib import Path
 
-from .csv_to_graph import generate_graphs_from_csv as ctg
-from .utils import get_fqdn, gen_filename
+from src.csv_to_graph import generate_graphs_from_csv as ctg
+from src.utils import get_fqdn, gen_filename
 
 # ログ設定
 logger = logging.getLogger("__main__").getChild(__name__)
