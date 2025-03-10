@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-from src.utils import gen_filename
+from .utils import gen_filename
 
 CURDIR = Path.cwd()
 

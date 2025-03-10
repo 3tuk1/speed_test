@@ -7,8 +7,8 @@ from ping3 import ping
 import logging
 from pathlib import Path
 
-import csv_to_graph as ctg
-from utils import get_fqdn, gen_filename
+from .csv_to_graph import generate_graphs_from_csv as ctg
+from .utils import get_fqdn, gen_filename
 
 # ログ設定
 logger = logging.getLogger("__main__").getChild(__name__)
@@ -95,7 +95,7 @@ def speedtest_main(total_count, interval, select_server):
         while test_count < total_count:
             schedule.run_pending()
             time.sleep(60)
-        ctg.generate_graphs_from_csv(file_abspath)
+        ctg(file_abspath)
         logger.info("終了")
     except Exception as e:
         logger.error(f"エラーが発生しました: {e}")

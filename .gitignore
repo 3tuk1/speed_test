@@ -1,5 +1,7 @@
 src/result_csv/*
 src/result_pdf/*
+result_pdf/*
+result_csv/*
 __pycache__/csv_to_graph.cpython-312.pyc
 __pycache__/csv_to_graph.cpython-312.pyc
 speed_test2.log

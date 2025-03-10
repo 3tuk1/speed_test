@@ -1,8 +1,10 @@
+
+
 import logging
 import sys
 
-from src.create_popup import create_popup
-from src.no_gui_do import  no_gui_do
+from .create_popup import create_popup
+from .no_gui_do import  no_gui_do
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
